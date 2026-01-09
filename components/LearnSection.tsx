@@ -159,7 +159,7 @@ const LearnSection: React.FC<LearnSectionProps> = ({ isLightMode }) => {
                         <div className="pl-4">1. Break word into letters: S-t-r-a-w-b-e-r-r-y</div>
                         <div className="pl-4">2. Iterate and count 'r's...</div>
                         <div className="pl-4">3. Found at index 2, 7, 8</div>
-                        <div className="pl-4 font-bold text-blue-500">-> Count is 3.</div>
+                        <div className="pl-4 font-bold text-blue-500">{`->`} Count is 3.</div>
                     </div>
                 </div>
             )}
