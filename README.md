@@ -67,6 +67,28 @@ _Open `http://localhost:8080` to see your app._
 
 ---
 
+## 🚢 Production Deployment with Docker Compose
+
+For a simple, single-command deployment on your server for production, use the provided `docker-compose.yml` file. This is the recommended way to run the application in a production environment.
+
+### 1. Prerequisites
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+### 2. Deploy
+Navigate to the project root and run:
+```bash
+docker-compose up --build -d
+```
+This command will build the Docker image and start the container in detached mode. The application will be available on port 80 of your server.
+
+### 3. To stop the application:
+```bash
+docker-compose down
+```
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Framework:** React + Vite
