@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ThinkMode: The Power of Reasoning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"],
+            },
+            colors: {
+              brand: {
+                dark: "#0f172a",
+                light: "#f8fafc",
+                accent: "#3b82f6",
+                danger: "#ef4444",
+                success: "#10b981",
+              },
+            },
+            animation: {
+              "pulse-fast": "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              glitch: "glitch 1s linear infinite",
+              stream: "stream 2s linear infinite",
+              blink: "blink 1.5s ease-in-out infinite",
+              aura: "aura 2s infinite",
+            },
+            keyframes: {
+              glitch: {
+                "2%, 64%": { transform: "translate(2px,0) skew(0deg)" },
+                "4%, 60%": { transform: "translate(-2px,0) skew(0deg)" },
+                "62%": { transform: "translate(0,0) skew(5deg)" },
+              },
+              stream: {
+                "0%": { transform: "translateY(-100%)" },
+                "100%": { transform: "translateY(100%)" },
+              },
+              blink: {
+                "0%, 100%": { opacity: "1" },
+                "50%": { opacity: "0.2" },
+              },
+              aura: {
+                "0%, 100%": { boxShadow: "0 0 0 0px rgba(59, 130, 246, 0)" },
+                "50%": { boxShadow: "0 0 0 6px rgba(59, 130, 246, 0.5)" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      html {
+        scroll-padding-top: 5rem; /* Fix anchor link offset */
+        scroll-behavior: smooth;
+      }
+      body {
+        background-color: #0f172a;
+        color: #f8fafc;
+        /* user-select handled in App.tsx container */
+      }
+
+      /* Only hide cursor if the class is active */
+      body.custom-cursor-active,
+      body.custom-cursor-active * {
+        cursor: none !important;
+      }
+
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* Tooltip Styles */
+      .tooltip-container {
+        position: relative;
+        display: inline-block;
+        border-bottom: 1px dotted #3b82f6;
+        cursor: help;
+        z-index: 10;
+      }
+
+      .tooltip-container:hover {
+        z-index: 50;
+      }
+
+      .tooltip-text {
+        visibility: hidden;
+        width: 220px;
+        background-color: #1e293b;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 9999; /* Ensure it is on top of everything */
+        bottom: 125%;
+        left: 50%;
+        margin-left: -110px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        border: 1px solid #334155;
+        font-size: 0.75rem;
+        font-weight: normal;
+        pointer-events: none;
+        line-height: 1.4;
+      }
+
+      .tooltip-container:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .light-mode .tooltip-text {
+        background-color: #fff;
+        color: #1e293b;
+        border-color: #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+          "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+          "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+          "react/": "https://esm.sh/react@^19.2.3/",
+          "react": "https://esm.sh/react@^19.2.3",
+          "recharts": "https://esm.sh/recharts@2.12.0"
+        }
+      }
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
