@@ -1,10 +1,6 @@
 # ThinkMode: The Power of Reasoning
 
 <div align="center">
-  <img src="https://kurokonobasuke.fandom.com/pl/wiki/Tetsuya_Kuroko" alt="ThinkMode Banner" width="100%" />
-</div>
-
-<div align="center">
   <h3>Built with ❤️ by <a href="https://github.com/yava-code/">yava-code</a></h3>
 </div>
 
