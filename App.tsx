@@ -75,7 +75,7 @@ const AppContent: React.FC = () => {
             } else {
                 addLog("Awaiting user credentials...", 'warning');
             }
-        } catch (e) {
+        } catch {
             addLog("Error checking IDX environment.", 'error');
         }
       } else {
@@ -105,7 +105,7 @@ const AppContent: React.FC = () => {
               setError("Project IDX environment not detected. Please use the Manual Entry below.");
               addLog("Environment Error: Project IDX not found.", 'error');
           }
-      } catch (e: any) {
+      } catch (e) {
           console.error(e);
           setError("Connection failed. Please use the Manual Entry below.");
           addLog("Connection handshake failed.", 'error');

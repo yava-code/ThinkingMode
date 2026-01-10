@@ -14,7 +14,7 @@ class AudioSystem {
 
   private init() {
     if (!this.ctx) {
-      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.ctx = new (window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();

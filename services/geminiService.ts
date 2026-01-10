@@ -29,12 +29,12 @@ export const generateFastResponse = async (prompt: string): Promise<string> => {
       }
     });
     return response.text || "Error: No response generated.";
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Fast response error:", error);
-    if (error.message?.includes('API key')) {
+    if (error instanceof Error && error.message?.includes('API key')) {
         return "Error: Invalid API Key. Please check your credentials.";
     }
-    if (error.message?.includes('not found') || error.status === 404) {
+    if (error instanceof Error && (error.message?.includes('not found') || (error as { status?: number }).status === 404)) {
         return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
     }
     return "Fatal Error: The system crashed while attempting a rapid response.";
@@ -53,12 +53,12 @@ export const generateThinkingResponse = async (prompt: string): Promise<string> 
       }
     });
     return response.text || "Error: No response generated.";
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Thinking response error:", error);
-    if (error.message?.includes('API key')) {
+    if (error instanceof Error && error.message?.includes('API key')) {
         return "Error: Invalid API Key. Please check your credentials.";
     }
-    if (error.message?.includes('not found') || error.status === 404) {
+    if (error instanceof Error && (error.message?.includes('not found') || (error as { status?: number }).status === 404)) {
         return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
     }
     return "Error: Unable to complete the reasoning process.";

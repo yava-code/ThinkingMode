@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, Cpu, FileText, BarChart3, GitBranch, AlertTriangle, Zap, Network, Scale, Clock, RefreshCw, Users, Coins, UserCircle2, Bot, BookOpen, GraduationCap, Calculator, Sigma } from 'lucide-react';
+import { Brain, Cpu, AlertTriangle, Zap, Scale, RefreshCw, Coins, BookOpen, GraduationCap, Sigma } from 'lucide-react';
 import SelfAttention from './SelfAttention';
 import TreeVisualization from './TreeVisualization';
 import { audioManager } from '../utils/audioSystem';
@@ -159,7 +159,7 @@ const LearnSection: React.FC<LearnSectionProps> = ({ isLightMode }) => {
                         <div className="pl-4">1. Break word into letters: S-t-r-a-w-b-e-r-r-y</div>
                         <div className="pl-4">2. Iterate and count 'r's...</div>
                         <div className="pl-4">3. Found at index 2, 7, 8</div>
-                        <div className="pl-4 font-bold text-blue-500">-> Count is 3.</div>
+                        <div className="pl-4 font-bold text-blue-500">{`->`} Count is 3.</div>
                     </div>
                 </div>
             )}
@@ -269,7 +269,7 @@ const LearnSection: React.FC<LearnSectionProps> = ({ isLightMode }) => {
 };
 
 // --- Sub-Component: Token Cost Widget ---
-const TokenCostWidget: React.FC<{isLightMode: boolean, isTechnical: boolean}> = ({ isLightMode, isTechnical }) => {
+const TokenCostWidget: React.FC<{isLightMode: boolean}> = ({ isLightMode }) => {
     const [standardCount, setStandardCount] = useState(0);
     const [reasoningCount, setReasoningCount] = useState(0);
     
