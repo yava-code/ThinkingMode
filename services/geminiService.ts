@@ -8,7 +8,7 @@ export const setDynamicApiKey = (key: string) => {
 
 // Initialize the API client
 const getAiClient = () => {
-  const apiKey = dynamicApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = dynamicApiKey || process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     console.error("API Key not found.");
     throw new Error("API Key is missing. Please provide a valid API key.");
@@ -22,10 +22,7 @@ export const generateFastResponse = async (prompt: string): Promise<string> => {
     // Using flash model for speed, representing the "impulsive" brain
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
-      contents: `Answer the following question as quickly as possible. Do not explain your reasoning. Just provide the final answer. Question: ${prompt}`,
-      config: {
-        thinkingConfig: { includeThoughts: false }
-      }
+      contents: `Answer the following question as quickly as possible. Do not explain your reasoning. Just provide the final answer. Question: ${prompt}`
     });
     return response.text || "Error: No response generated.";
   } catch (error: any) {
@@ -40,10 +37,7 @@ export const generateThinkingResponse = async (prompt: string): Promise<string> 
     // Using pro model with reasoning instructions
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-pro',
-      contents: `Please solve the following problem. Show your step-by-step reasoning clearly before providing the final answer. Treat this as a complex logic puzzle. Question: ${prompt}`,
-      config: {
-        thinkingConfig: { includeThoughts: true, thinkingBudget: 2048 }
-      }
+      contents: `Please solve the following problem. Show your step-by-step reasoning clearly before providing the final answer. Treat this as a complex logic puzzle. Question: ${prompt}`
     });
     return response.text || "Error: No response generated.";
   } catch (error: any) {

@@ -45,8 +45,9 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const checkKey = async () => {
       // Check environment first
-      if (process.env.API_KEY || process.env.GEMINI_API_KEY) {
-        addLog("Environment API Key detected and loaded.", 'success');
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (apiKey) {
+        addLog("VITE_GEMINI_API_KEY detected and loaded.", 'success');
       } else {
         addLog("No API Key found in environment. Please set VITE_GEMINI_API_KEY.", 'warning');
       }
