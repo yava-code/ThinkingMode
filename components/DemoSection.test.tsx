@@ -21,10 +21,8 @@ vi.mock('../utils/audioSystem', () => ({
 
 describe('DemoSection', () => {
   it('renders correctly and handles user interaction', async () => {
-    // @ts-expect-error - Mocking the service for testing purposes
-    geminiService.generateFastResponse.mockResolvedValue('Fast response');
-    // @ts-expect-error - Mocking the service for testing purposes
-    geminiService.generateThinkingResponse.mockResolvedValue('Thinking response');
+    (geminiService.generateFastResponse as vi.Mock).mockResolvedValue('Fast response');
+    (geminiService.generateThinkingResponse as vi.Mock).mockResolvedValue('Thinking response');
     render(<DemoSection isLightMode={false} />);
 
     // Check that the component renders
