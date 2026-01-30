@@ -58,7 +58,7 @@ export const generateThinkingResponse = async (prompt: string): Promise<string> 
     if (error instanceof Error && error.message?.includes('API key')) {
         return "Error: Invalid API Key. Please check your credentials.";
     }
-    if (error instanceof Error && (error.message?.includes('not found') || (error as { status?: number }).status === 404)) {
+    if (error instanceof Error && (error.message?.includes('not found') || ('status' in error && (error as any).status === 404))) {
         return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
     }
     return "Error: Unable to complete the reasoning process.";
