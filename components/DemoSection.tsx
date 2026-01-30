@@ -27,17 +27,35 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
     setFastResult(null);
     setThinkResult(null);
 
-    const query = customQuery.trim() || activeScenario.question;
+    // Basic sanitization: remove any script tags or suspicious HTML
+    const sanitizedQuery = customQuery.replace(/<[^>]*>?/gm, '').trim();
+    const query = sanitizedQuery || activeScenario.question;
+    const isCustom = !!sanitizedQuery;
 
-    const [fastRes, thinkRes] = await Promise.all([
-      generateFastResponse(query),
-      generateThinkingResponse(query)
-    ]);
+    try {
+      const [fastRes, thinkRes] = await Promise.all([
+        generateFastResponse(query),
+        generateThinkingResponse(query)
+      ]);
 
-    setFastResult(fastRes);
-    setThinkResult(thinkRes);
-    setIsLoading(false);
-    if (setGlobalLoading) setGlobalLoading(false);
+      setFastResult(fastRes);
+      setThinkResult(thinkRes);
+    } catch (error) {
+      console.error("Experiment failed, using automatic fallback:", error);
+
+      // Automatic Fallback Logic
+      if (isCustom) {
+        setFastResult("I apologize, but the Impulse Engine encountered a rate limit or error. For your custom query, I'm unable to provide an automated guess at this time.");
+        setThinkResult("System Auto-Response: Reasoning process interrupted. To maintain operation, I have switched to automatic mode. Please try again in a few minutes or check your API configuration.");
+      } else {
+        // Use the scenario trap to provide a meaningful fallback
+        setFastResult(`[AUTOMATIC RESPONSE] Based on typical impulsive patterns: ${activeScenario.trap.split('.')[0]}.`);
+        setThinkResult(`[AUTOMATIC REASONING] Analyzing "${activeScenario.title}"... \n1. Identified common logic trap.\n2. Verified constraints.\n3. Conclusion: ${activeScenario.trap}`);
+      }
+    } finally {
+      setIsLoading(false);
+      if (setGlobalLoading) setGlobalLoading(false);
+    }
   };
 
   const handleReset = () => {

@@ -8,7 +8,7 @@ export const setDynamicApiKey = (key: string) => {
 
 // Initialize the API client
 const getAiClient = () => {
-  const apiKey = dynamicApiKey || process.env.API_KEY;
+  const apiKey = dynamicApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("API Key not found.");
     throw new Error("API Key is missing. Please provide a valid API key.");
@@ -20,47 +20,34 @@ export const generateFastResponse = async (prompt: string): Promise<string> => {
   try {
     const ai = getAiClient();
     // Using flash model for speed, representing the "impulsive" brain
-    // We explicitly ask it to be brief to simulate the "no thinking" risk
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Updated to supported flash model
+      model: 'gemini-1.5-flash',
       contents: `Answer the following question as quickly as possible. Do not explain your reasoning. Just provide the final answer. Question: ${prompt}`,
       config: {
-        thinkingConfig: { thinkingBudget: 0 } // Disable thinking to simulate impulse
+        thinkingConfig: { includeThoughts: false }
       }
     });
     return response.text || "Error: No response generated.";
   } catch (error: any) {
     console.error("Fast response error:", error);
-    if (error.message?.includes('API key')) {
-        return "Error: Invalid API Key. Please check your credentials.";
-    }
-    if (error.message?.includes('not found') || error.status === 404) {
-        return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
-    }
-    return "Fatal Error: The system crashed while attempting a rapid response.";
+    throw error; // Let the caller handle it for synchronized fallback
   }
 };
 
 export const generateThinkingResponse = async (prompt: string): Promise<string> => {
   try {
     const ai = getAiClient();
-    // Using pro model with high thinking budget for reasoning tasks
+    // Using pro model with reasoning instructions
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Updated to supported pro model
+      model: 'gemini-1.5-pro',
       contents: `Please solve the following problem. Show your step-by-step reasoning clearly before providing the final answer. Treat this as a complex logic puzzle. Question: ${prompt}`,
       config: {
-        thinkingConfig: { thinkingBudget: 2048 } // Budget for reasoning
+        thinkingConfig: { includeThoughts: true, thinkingBudget: 2048 }
       }
     });
     return response.text || "Error: No response generated.";
   } catch (error: any) {
     console.error("Thinking response error:", error);
-    if (error.message?.includes('API key')) {
-        return "Error: Invalid API Key. Please check your credentials.";
-    }
-    if (error.message?.includes('not found') || error.status === 404) {
-        return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
-    }
-    return "Error: Unable to complete the reasoning process.";
+    throw error; // Let the caller handle it for synchronized fallback
   }
 };
