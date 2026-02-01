@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Brain, Zap, Loader2, Terminal, ChevronRight } from 'lucide-react';
+import { Brain, Zap, Loader2, Terminal, ChevronRight, BarChart3 } from 'lucide-react';
 import { ModelMode } from '../types';
 import { audioManager } from '../utils/audioSystem';
-import { useTypewriter } from '../hooks/useTypewriter';
+import MarkdownRenderer from './MarkdownRenderer';
+import { ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface ThinkingVisualizerProps {
   mode: ModelMode;
@@ -17,190 +18,132 @@ const ThinkingVisualizer: React.FC<ThinkingVisualizerProps> = ({ mode, isLoading
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   
-  // Custom hook for streaming result
-  const displayedResult = useTypewriter(result, 8);
+  // Depth metrics for recharts
+  const [depthData, setDepthData] = useState<{name: string, value: number}[]>([]);
 
-  // Audio Effect for Thinking State
   useEffect(() => {
     if (isLoading) {
       audioManager.startThinking();
       if (detailsRef.current) detailsRef.current.open = true;
+      setDepthData([]);
     } else {
       audioManager.stopThinking();
     }
     return () => audioManager.stopThinking();
   }, [isLoading]);
 
-  // Handle User Scroll to toggle Auto-Scroll
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-      // If user is within 50px of the bottom, enable auto-scroll. Otherwise, disable it.
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
       setShouldAutoScroll(isAtBottom);
     }
   };
 
-  // Auto-scroll logic
   useEffect(() => {
     if (shouldAutoScroll && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [logs, displayedResult, shouldAutoScroll]); 
+  }, [logs, result, shouldAutoScroll]);
 
-  // Reset auto-scroll when a new run starts
   useEffect(() => {
-    if (isLoading) {
-      setShouldAutoScroll(true);
-    }
+    if (isLoading) setShouldAutoScroll(true);
   }, [isLoading]);
 
-  // Log Simulation (The "Thinking Process")
+  // Log Simulation & Depth Tracking
   useEffect(() => {
-    if (!isLoading) {
-      if (!result) {
-        setLogs([]);
-      }
-      return;
-    }
+    if (!isLoading) return;
 
     setLogs([]);
-    
-    const fastLogs = [
-      "// Ingesting prompt...",
-      "// Tokenizing input...",
-      "// Vector search...",
-      "// Predicting next token...",
-      "// Generating output...",
-      "// Finalizing response..."
-    ];
-    
-    const thinkLogs = [
-      "// Analyzing intent...",
-      "// Defining constraints...",
-      "// Checking for logic traps...",
-      "/* Strategy: Decomposition */",
-      "// Step 1: Breakdown...",
-      "// Step 2: Calculation...",
-      "// Step 3: Verification...",
-      "// Reviewing logical consistency...",
-      "// Formatting final answer..."
-    ];
+    const currentLogs = mode === ModelMode.FAST
+      ? ["// Ingesting...", "// Tokenizing...", "// Predicting...", "// Outputting..."]
+      : ["// Analyzing...", "// Defining...", "// Checking Traps...", "/* Strategy */", "// Step 1...", "// Step 2...", "// Verifying...", "// Finalizing..."];
 
-    const currentLogs = mode === ModelMode.FAST ? fastLogs : thinkLogs;
     let index = 0;
-
     const interval = setInterval(() => {
       if (index < currentLogs.length) {
         setLogs(prev => [...prev, currentLogs[index]]);
+        setDepthData(prev => [...prev, { name: `S${index}`, value: Math.random() * 100 }]);
         index++;
       }
-    }, mode === ModelMode.FAST ? 300 : 800);
+    }, mode === ModelMode.FAST ? 200 : 500);
 
     return () => clearInterval(interval);
-  }, [isLoading, mode, result]);
+  }, [isLoading, mode]);
 
   const isFast = mode === ModelMode.FAST;
-
-  // Styling based on mode/theme
   const containerClasses = isFast
-    ? isLightMode 
-      ? 'border-red-200 bg-white shadow-lg shadow-red-100' 
-      : 'border-red-500/30 bg-red-950/10 shadow-[0_0_30px_rgba(239,68,68,0.1)]'
-    : isLightMode
-      ? 'border-blue-200 bg-white shadow-lg shadow-blue-100'
-      : 'border-blue-500/30 bg-blue-950/10 shadow-[0_0_30px_rgba(59,130,246,0.1)]';
+    ? isLightMode ? 'border-red-200 bg-white shadow-lg' : 'border-red-500/30 bg-red-950/10'
+    : isLightMode ? 'border-emerald-200 bg-white shadow-lg' : 'border-emerald-500/30 bg-emerald-950/10';
 
   const headerColor = isFast
     ? isLightMode ? 'text-red-600' : 'text-red-400'
-    : isLightMode ? 'text-blue-600' : 'text-blue-400';
+    : isLightMode ? 'text-emerald-600' : 'text-emerald-400';
 
   const codeColor = isLightMode ? 'text-slate-500' : 'text-slate-400';
 
   return (
     <div className={`relative h-full w-full rounded-xl border-2 p-1 overflow-hidden flex flex-col transition-all duration-500 ${containerClasses}`}>
-      
-      {/* Background Gradient */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className={`absolute inset-0 ${isFast ? 'bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500 via-transparent to-transparent' : 'bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500 via-transparent to-transparent'}`}></div>
-      </div>
-
       <div className="relative z-10 flex flex-col h-full p-5 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isFast ? 'bg-red-500/10' : 'bg-blue-500/10'} ${headerColor}`}>
+            <div className={`p-2 rounded-lg ${isFast ? 'bg-red-500/10' : 'bg-emerald-500/10'} ${headerColor}`}>
               {isFast ? <Zap size={20} /> : <Brain size={20} />}
             </div>
             <div>
-              <h3 className={`font-bold text-base md:text-lg ${headerColor}`}>
+              <h3 className={`font-bold text-base uppercase tracking-tighter ${headerColor}`}>
                 {isFast ? 'Impulse Engine' : 'Reasoning Engine'}
               </h3>
-              <p className={`text-[10px] md:text-xs opacity-70`}>
-                {isFast ? 'Zero-shot. No scratchpad.' : 'Chain of Thought enabled.'}
-              </p>
             </div>
           </div>
-          {isLoading && (
-            <Loader2 className={`animate-spin ${headerColor}`} />
-          )}
+          {isLoading && <Loader2 className={`animate-spin ${headerColor}`} />}
         </div>
 
-        {/* Scrollable Area */}
+        {/* Depth Chart Area */}
+        {isLoading && (
+          <div className="h-12 mb-4 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={depthData}>
+                <Bar dataKey="value">
+                  {depthData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={isFast ? '#ef4444' : '#10b981'} opacity={0.3 + (index / depthData.length) * 0.7} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Content Area */}
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 pr-2 min-h-0 relative scroll-smooth w-full font-mono text-xs md:text-sm"
-          style={{
-            maxHeight: '500px',
-            overflowY: 'auto'
-          }}
+          className="flex-1 pr-2 min-h-0 relative overflow-y-auto scroll-smooth font-mono text-xs"
         >
-          {/* Collapsible Logs */}
-          {(logs.length > 0) && (
+          {/* Logs */}
+          {logs.length > 0 && (
              <details ref={detailsRef} className="mb-4 group" open>
-               <summary 
-                  onClick={() => audioManager.playClick()}
-                  className={`flex items-center gap-2 text-[10px] uppercase tracking-wider font-bold mb-2 cursor-pointer hover:opacity-80 transition-opacity select-none list-none outline-none ${codeColor}`}
-               >
-                 <span className="transition-transform duration-200 group-open:rotate-90">
-                    <ChevronRight size={14} />
-                 </span>
-                 Execution Trace
+               <summary className={`flex items-center gap-2 text-[10px] uppercase font-bold mb-2 cursor-pointer list-none outline-none ${codeColor}`}>
+                 <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
+                 TRACE_LOG
                </summary>
-               
-               <div className={`pl-3 border-l-2 ${isFast ? 'border-red-500/20' : 'border-blue-500/20'} space-y-1`}>
-                    {logs.map((log, i) => (
-                      <div key={i} className={`flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300 ${codeColor}`}>
-                        <span className="opacity-50 select-none">{i + 1}</span>
-                        <span>{log}</span>
-                      </div>
-                    ))}
-                    {isLoading && (
-                      <div className="animate-pulse opacity-50 pl-6">...</div>
-                    )}
-                 </div>
+               <div className={`pl-3 border-l-2 ${isFast ? 'border-red-500/20' : 'border-emerald-500/20'} space-y-1 opacity-50`}>
+                    {logs.map((log, i) => <div key={i}>{log}</div>)}
+               </div>
              </details>
           )}
 
-          {/* Final Result (Typewriter) */}
-          {displayedResult && (
-            <div className={`mt-4 pt-4 border-t ${isLightMode ? 'border-slate-200' : 'border-slate-700/50'}`}>
-              <div className={`flex items-center gap-2 mb-2 ${isFast ? 'text-red-500' : 'text-blue-500'}`}>
+          {/* Result */}
+          {result && (
+            <div className={`mt-4 pt-4 border-t ${isLightMode ? 'border-slate-200' : 'border-slate-800/50'}`}>
+              <div className={`flex items-center gap-2 mb-3 ${isFast ? 'text-red-500' : 'text-emerald-500'}`}>
                 <Terminal size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Output Stream</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Live Output</span>
               </div>
-              <div 
-                className={`font-mono font-bold leading-relaxed ${isLightMode ? 'text-slate-900' : 'text-white'}`}
-                style={{ 
-                    whiteSpace: 'pre-wrap', 
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word'
-                }}
-              >
-                {displayedResult}
-                {/* Blinking Cursor - using CSS block instead of char for consistent height */}
-                <span className="animate-blink inline-block w-2.5 h-4 bg-current align-middle ml-1 -mt-1 shadow-[0_0_8px_currentColor]"></span>
+              <div className={`${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                <MarkdownRenderer content={result} isLightMode={isLightMode} />
+                {isLoading && <span className="animate-blink inline-block w-2 h-4 bg-emerald-500 ml-1" />}
               </div>
             </div>
           )}

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { ReasoningMode } from "../types";
 
 let dynamicApiKey: string | null = null;
 
@@ -6,9 +7,8 @@ export const setDynamicApiKey = (key: string) => {
   dynamicApiKey = key;
 };
 
-// Initialize the API client
 const getAiClient = () => {
-  const apiKey = dynamicApiKey || process.env.API_KEY;
+  const apiKey = dynamicApiKey || import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     console.error("API Key not found.");
     throw new Error("API Key is missing. Please provide a valid API key.");
@@ -16,51 +16,70 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+const getSystemInstruction = (mode: ReasoningMode): string => {
+  switch (mode) {
+    case ReasoningMode.DEBUG:
+      return "You are a Debugger. Focus on stack traces, logic flow, and edge cases. Be precise and technical.";
+    case ReasoningMode.ARCHITECT:
+      return "You are a System Architect. Focus on modularity, scalability, and design patterns. Think high-level and structural.";
+    case ReasoningMode.CREATIVE:
+      return "You are a Creative Strategist. Focus on brainstorming, non-linear logic, and innovative solutions. Be expansive and visionary.";
+    default:
+      return "You are a helpful assistant.";
+  }
+};
+
+export const generateStreamingResponse = async (
+  prompt: string,
+  isThinking: boolean,
+  reasoningMode: ReasoningMode,
+  onChunk: (chunk: string) => void
+): Promise<string> => {
+  try {
+    const ai = getAiClient();
+    const modelName = isThinking ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+    const model = ai.getGenerativeModel({
+      model: modelName,
+      systemInstruction: getSystemInstruction(reasoningMode)
+    });
+
+    const result = await model.generateContentStream(prompt);
+    let fullText = "";
+
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullText += chunkText;
+      onChunk(chunkText);
+    }
+
+    return fullText;
+  } catch (error: any) {
+    console.error("Streaming response error:", error);
+    throw error;
+  }
+};
+
+// Keep existing functions for compatibility or simple calls
 export const generateFastResponse = async (prompt: string): Promise<string> => {
   try {
     const ai = getAiClient();
-    // Using flash model for speed, representing the "impulsive" brain
-    // We explicitly ask it to be brief to simulate the "no thinking" risk
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Updated to supported flash model
-      contents: `Answer the following question as quickly as possible. Do not explain your reasoning. Just provide the final answer. Question: ${prompt}`,
-      config: {
-        thinkingConfig: { thinkingBudget: 0 } // Disable thinking to simulate impulse
-      }
-    });
-    return response.text || "Error: No response generated.";
+    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const response = await model.generateContent(`Answer the following question as quickly as possible. Just provide the final answer. Question: ${prompt}`);
+    return response.response.text();
   } catch (error: any) {
     console.error("Fast response error:", error);
-    if (error.message?.includes('API key')) {
-        return "Error: Invalid API Key. Please check your credentials.";
-    }
-    if (error.message?.includes('not found') || error.status === 404) {
-        return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
-    }
-    return "Fatal Error: The system crashed while attempting a rapid response.";
+    throw error;
   }
 };
 
 export const generateThinkingResponse = async (prompt: string): Promise<string> => {
   try {
     const ai = getAiClient();
-    // Using pro model with high thinking budget for reasoning tasks
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Updated to supported pro model
-      contents: `Please solve the following problem. Show your step-by-step reasoning clearly before providing the final answer. Treat this as a complex logic puzzle. Question: ${prompt}`,
-      config: {
-        thinkingConfig: { thinkingBudget: 2048 } // Budget for reasoning
-      }
-    });
-    return response.text || "Error: No response generated.";
+    const model = ai.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const response = await model.generateContent(`Show your reasoning clearly. Question: ${prompt}`);
+    return response.response.text();
   } catch (error: any) {
     console.error("Thinking response error:", error);
-    if (error.message?.includes('API key')) {
-        return "Error: Invalid API Key. Please check your credentials.";
-    }
-    if (error.message?.includes('not found') || error.status === 404) {
-        return "Error: Model not available. The experimental model may be geo-restricted or deprecated.";
-    }
-    return "Error: Unable to complete the reasoning process.";
+    throw error;
   }
 };

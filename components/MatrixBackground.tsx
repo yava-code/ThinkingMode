@@ -23,7 +23,7 @@ const MatrixBackground: React.FC<MatrixBackgroundProps> = ({ paused, isLightMode
     canvas.height = height;
 
     const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const fontSize = 14;
+    const fontSize = 20;
     const columns = width / fontSize;
     const drops: number[] = [];
 
@@ -37,8 +37,8 @@ const MatrixBackground: React.FC<MatrixBackgroundProps> = ({ paused, isLightMode
     const draw = (time: number) => {
       if (paused) return;
 
-      // Dynamic Speed: 24fps normally, 60fps when "Thinking"
-      const fps = isLoading ? 60 : 24; 
+      // Dynamic Speed: 15fps normally, 30fps when "Thinking" (Optimized for performance)
+      const fps = isLoading ? 30 : 15;
       const interval = 1000 / fps;
       const deltaTime = time - lastTime;
       
@@ -54,7 +54,7 @@ const MatrixBackground: React.FC<MatrixBackgroundProps> = ({ paused, isLightMode
         
         ctx.fillRect(0, 0, width, height);
 
-        ctx.font = `${fontSize}px "JetBrains Mono"`;
+        ctx.font = `bold ${fontSize}px "JetBrains Mono"`;
 
         for (let i = 0; i < drops.length; i++) {
           const text = chars[Math.floor(Math.random() * chars.length)];

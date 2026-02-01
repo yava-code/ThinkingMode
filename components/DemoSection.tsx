@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Play, ArrowRight } from 'lucide-react';
-import { generateFastResponse, generateThinkingResponse } from '../services/geminiService';
+import { Play, ArrowRight, RefreshCw } from 'lucide-react';
+import { generateStreamingResponse } from '../services/geminiService';
 import ThinkingVisualizer from './ThinkingVisualizer';
 import { ModelMode, SCENARIOS, Scenario } from '../types';
 import { audioManager } from '../utils/audioSystem';
+import { useSystemLog } from '../context/SystemLogContext';
 
 interface DemoSectionProps {
   isLightMode: boolean;
@@ -11,6 +12,7 @@ interface DemoSectionProps {
 }
 
 const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading }) => {
+  const { reasoningMode, addMessageToActiveSession, addLog } = useSystemLog();
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
   const [customQuery, setCustomQuery] = useState('');
   const [fastResult, setFastResult] = useState<string | null>(null);
@@ -18,26 +20,53 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRun = async () => {
-    // Trigger audio click
     audioManager.playClick();
     
     setIsLoading(true);
     if (setGlobalLoading) setGlobalLoading(true);
     
-    setFastResult(null);
-    setThinkResult(null);
+    setFastResult("");
+    setThinkResult("");
 
-    const query = customQuery.trim() || activeScenario.question;
+    const sanitizedQuery = customQuery.replace(/<[^>]*>?/gm, '').trim();
+    const query = sanitizedQuery || activeScenario.question;
 
-    const [fastRes, thinkRes] = await Promise.all([
-      generateFastResponse(query),
-      generateThinkingResponse(query)
-    ]);
+    addLog(`Initiating experiment with mode: ${reasoningMode}`, 'info');
+    addMessageToActiveSession('user', query);
 
-    setFastResult(fastRes);
-    setThinkResult(thinkRes);
-    setIsLoading(false);
-    if (setGlobalLoading) setGlobalLoading(false);
+    try {
+      // Run both in parallel but handle streaming for both
+      // For Fast mode, we don't necessarily need "thinking" logic, but we still stream
+
+      const runFast = generateStreamingResponse(
+        query,
+        false,
+        reasoningMode,
+        (chunk) => setFastResult(prev => (prev || "") + chunk)
+      );
+
+      const runThink = generateStreamingResponse(
+        query,
+        true,
+        reasoningMode,
+        (chunk) => setThinkResult(prev => (prev || "") + chunk)
+      );
+
+      const [finalFast, finalThink] = await Promise.all([runFast, runThink]);
+
+      addMessageToActiveSession('assistant', `[FAST]: ${finalFast}\n\n[THINKING]: ${finalThink}`);
+      addLog("Experiment completed successfully.", 'success');
+
+    } catch (error) {
+      console.error("Experiment failed:", error);
+      addLog("Experiment failed. Check console for details.", 'error');
+
+      setFastResult(prev => prev || "[ERROR]: Impulse Engine failure.");
+      setThinkResult(prev => prev || "[ERROR]: Reasoning Engine failure. Rate limit likely exceeded.");
+    } finally {
+      setIsLoading(false);
+      if (setGlobalLoading) setGlobalLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -59,11 +88,10 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
           The Split-Screen Test
         </h2>
         <p className={`${textColor} max-w-2xl mx-auto`}>
-          Witness the difference in real-time. Select a tricky scenario or type your own logic trap.
+          Witness the difference in real-time. Mode: <span className="text-emerald-500 font-mono font-bold uppercase">{reasoningMode}</span>
         </p>
       </div>
 
-      {/* Controls */}
       <div className={`rounded-2xl p-6 border mb-8 backdrop-blur-sm transition-colors duration-300 ${panelBg}`}>
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-4">
@@ -117,7 +145,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
           </div>
         </div>
 
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex justify-center gap-4">
           <button
             onClick={handleRun}
             disabled={isLoading}
@@ -126,24 +154,17 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
               hover:animate-aura
               ${isLoading 
                 ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105'
+                : 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
               }
             `}
           >
-            {isLoading ? (
-              'Processing...'
-            ) : (
-              <>
-                <Play size={20} fill="currentColor" /> Run Experiment
-              </>
-            )}
+            {isLoading ? <RefreshCw className="animate-spin" size={20} /> : <Play size={20} fill="currentColor" />}
+            {isLoading ? 'Thinking...' : 'Run Experiment'}
           </button>
         </div>
       </div>
 
-      {/* Visualization Grid - Updated Height to Auto/Flexible */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[500px]">
-        {/* Left: The Mistake */}
         <div className="flex flex-col h-full min-h-[400px]">
           <div className="flex-1 h-full">
             <ThinkingVisualizer 
@@ -154,16 +175,15 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
             />
           </div>
           <div className="mt-4 px-4 pb-4">
-            <h4 className="font-bold text-red-500 mb-1 flex items-center gap-2">
-              <ArrowRight size={16} /> The "Black Box" Danger
+            <h4 className="font-bold text-red-500 mb-1 flex items-center gap-2 uppercase tracking-tighter text-xs">
+              <ArrowRight size={14} /> Impulse Engine
             </h4>
-            <p className={`text-sm ${textColor}`}>
-              Without scratchpad space, the model guesses the next token immediately. This statistical guessing fails at logic, leading to confident hallucinations.
+            <p className={`text-[10px] leading-tight ${textColor}`}>
+              Statistical prediction without intermediate scratchpad. High probability of hallucinations in logical traps.
             </p>
           </div>
         </div>
 
-        {/* Right: The Solution */}
         <div className="flex flex-col h-full min-h-[400px]">
           <div className="flex-1 h-full">
             <ThinkingVisualizer 
@@ -174,11 +194,11 @@ const DemoSection: React.FC<DemoSectionProps> = ({ isLightMode, setGlobalLoading
             />
           </div>
           <div className="mt-4 px-4 pb-4">
-            <h4 className="font-bold text-blue-500 mb-1 flex items-center gap-2">
-              <ArrowRight size={16} /> The Chain of Thought
+            <h4 className="font-bold text-emerald-500 mb-1 flex items-center gap-2 uppercase tracking-tighter text-xs">
+              <ArrowRight size={14} /> Reasoning Engine ({reasoningMode})
             </h4>
-            <p className={`text-sm ${textColor}`}>
-              By explicitly writing down intermediate steps, the model catches its own errors. It moves from "Fast Thinking" (System 1) to "Slow Thinking" (System 2).
+            <p className={`text-[10px] leading-tight ${textColor}`}>
+              Multi-step Chain of Thought with specialized system instructions. Self-correcting and logical.
             </p>
           </div>
         </div>

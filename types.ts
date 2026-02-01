@@ -3,6 +3,27 @@ export enum ModelMode {
   THINKING = 'THINKING'
 }
 
+export enum ReasoningMode {
+  DEBUG = 'DEBUG',
+  ARCHITECT = 'ARCHITECT',
+  CREATIVE = 'CREATIVE'
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  lastUpdated: number;
+  mode: ReasoningMode;
+}
+
 export interface SimulationStep {
   id: string;
   type: 'input' | 'process' | 'output';
